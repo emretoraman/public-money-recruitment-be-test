@@ -1,5 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using VacationRental.Api.Models;
+using VacationRental.Core.Aggregates.BookingAggregate.Entities;
+using VacationRental.Core.Aggregates.BookingAggregate.Specifications;
+using VacationRental.Core.Aggregates.RentalAggregate.Entities;
+using VacationRental.SharedKernel.Interfaces;
 
 namespace VacationRental.Api.Controllers
 {
@@ -7,23 +12,25 @@ namespace VacationRental.Api.Controllers
     [ApiController]
     public class CalendarController : ControllerBase
     {
-        private readonly IDictionary<int, RentalViewModel> _rentals;
-        private readonly IDictionary<int, BookingViewModel> _bookings;
+        private readonly IRepository<Rental> _rentalRepository;
+        private readonly IRepository<Booking> _bookingRepository;
 
         public CalendarController(
-            IDictionary<int, RentalViewModel> rentals,
-            IDictionary<int, BookingViewModel> bookings)
+            IRepository<Rental> rentalRepository,
+            IRepository<Booking> bookingRepository)
         {
-            _rentals = rentals;
-            _bookings = bookings;
+            _rentalRepository = rentalRepository;
+            _bookingRepository = bookingRepository;
         }
 
         [HttpGet]
-        public CalendarViewModel Get(int rentalId, DateTime start, int nights)
+        public async Task<CalendarViewModel> GetAsync(int rentalId, DateTime start, int nights)
         {
             if (nights < 0)
                 throw new ApplicationException("Nights must be positive");
-            if (!_rentals.ContainsKey(rentalId))
+
+            var rental = await _rentalRepository.GetByIdAsync(rentalId);
+            if (rental == null)
                 throw new ApplicationException("Rental not found");
 
             var result = new CalendarViewModel 
@@ -32,14 +39,9 @@ namespace VacationRental.Api.Controllers
                 Dates = new List<CalendarDateViewModel>() 
             };
 
-            var rental = _rentals[rentalId];
-
             //Get only related bookings
-            var bookings = _bookings.Values
-                .Where(b => b.RentalId == rentalId
-                    && b.Start.Date < start.Date.AddDays(nights + rental.PreparationTimeInDays)
-                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > start.Date)
-                .ToList();
+            var specification = new BookingsSpecification(rentalId, start.Date, nights, rental.PreparationTimeInDays);
+            var bookings = await _bookingRepository.ListAsync(specification);
 
             var bookingUnits = new Dictionary<int, int>();
             var isUnitBlockedTomorrow = new bool[rental.Units + 1];
@@ -79,7 +81,7 @@ namespace VacationRental.Api.Controllers
             return result;
         }
 
-        private static int GetUnit(Dictionary<int, int> bookingUnits, bool[] isUnitBlocked, bool[] isUnitBlockedTomorrow, BookingViewModel booking, RentalViewModel rental, DateTime date)
+        private static int GetUnit(Dictionary<int, int> bookingUnits, bool[] isUnitBlocked, bool[] isUnitBlockedTomorrow, Booking booking, Rental rental, DateTime date)
         {
             var unit = 0;
             if (bookingUnits.ContainsKey(booking.Id)) //Already assigned unit

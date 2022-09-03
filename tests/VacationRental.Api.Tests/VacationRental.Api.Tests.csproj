@@ -22,8 +22,8 @@
 		</PackageReference>
 	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\VacationRental.Api\VacationRental.Api.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\VacationRental.Api\VacationRental.Api.csproj" />
+	</ItemGroup>
 
 </Project>

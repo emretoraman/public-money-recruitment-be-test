@@ -1,5 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using VacationRental.Api.Models;
+using VacationRental.Core.Aggregates.BookingAggregate.Entities;
+using VacationRental.Core.Aggregates.BookingAggregate.Specifications;
+using VacationRental.Core.Aggregates.RentalAggregate.Entities;
+using VacationRental.SharedKernel.Interfaces;
 
 namespace VacationRental.Api.Controllers
 {
@@ -7,64 +12,63 @@ namespace VacationRental.Api.Controllers
     [ApiController]
     public class RentalsController : ControllerBase
     {
-        private readonly IDictionary<int, RentalViewModel> _rentals;
-        private readonly IDictionary<int, BookingViewModel> _bookings;
+        private readonly IRepository<Rental> _rentalRepository;
+        private readonly IRepository<Booking> _bookingRepository;
+        private readonly IMapper _mapper;
 
-        public RentalsController(IDictionary<int, RentalViewModel> rentals, IDictionary<int, BookingViewModel> bookings)
+        public RentalsController(
+            IRepository<Rental> rentalRepository, 
+            IRepository<Booking> bookingRepository,
+            IMapper mapper)
         {
-            _rentals = rentals;
-            _bookings = bookings;
+            _rentalRepository = rentalRepository;
+            _bookingRepository = bookingRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
         [Route("{rentalId:int}")]
-        public RentalViewModel Get(int rentalId)
+        public async Task<RentalViewModel> Get(int rentalId)
         {
-            if (!_rentals.ContainsKey(rentalId))
+            var rental = await _rentalRepository.GetByIdAsync(rentalId);
+            if (rental == null)
                 throw new ApplicationException("Rental not found");
 
-            return _rentals[rentalId];
+            return _mapper.Map<RentalViewModel>(rental);
         }
 
         [HttpPost]
-        public ResourceIdViewModel Post(RentalBindingModel model)
+        public async Task<ResourceIdViewModel> Post(RentalBindingModel model)
         {
             if (model.Units < 0)
                 throw new ApplicationException("Units must be positive");
             if (model.PreparationTimeInDays < 0)
                 throw new ApplicationException("PreparationTimeInDays must be positive");
 
-            var key = new ResourceIdViewModel { Id = _rentals.Keys.Count + 1 };
+            var rental = new Rental(model.Units, model.PreparationTimeInDays);
+            await _rentalRepository.AddAsync(rental);
 
-            _rentals.Add(key.Id, new RentalViewModel
-            {
-                Id = key.Id,
-                Units = model.Units,
-                PreparationTimeInDays = model.PreparationTimeInDays
-            });
-
-            return key;
+            return _mapper.Map<ResourceIdViewModel>(rental);
         }
 
         [HttpPut]
         [Route("{rentalId:int}")]
-        public ResourceIdViewModel Put(int rentalId, RentalBindingModel model)
+        public async Task<ResourceIdViewModel> Put(int rentalId, RentalBindingModel model)
         {
             if (model.Units < 0)
                 throw new ApplicationException("Units must be positive");
             if (model.PreparationTimeInDays < 0)
                 throw new ApplicationException("PreparationTimeInDays must be positive");
-            if (!_rentals.ContainsKey(rentalId))
-                throw new ApplicationException("Rental not found");
 
-            var rental = _rentals[rentalId];
+            var rental = await _rentalRepository.GetByIdAsync(rentalId);
+            if (rental == null)
+                throw new ApplicationException("Rental not found");
 
             if (model.Units < rental.Units || model.PreparationTimeInDays > rental.PreparationTimeInDays)
             {
                 //Get only related bookings
-                var bookings = _bookings.Values
-                    .Where(b => b.RentalId == rentalId)
-                    .ToList();
+                var specification = new BookingsSpecification(rentalId, null, null, null);
+                var bookings = await _bookingRepository.ListAsync(specification);
 
                 var blockedUnitCounts = new Dictionary<DateTime, int>();
                 foreach (var booking in bookings)
@@ -88,10 +92,10 @@ namespace VacationRental.Api.Controllers
                 }
             }
 
-            rental.Units = model.Units;
-            rental.PreparationTimeInDays = model.PreparationTimeInDays;
+            rental.Update(model.Units, model.PreparationTimeInDays);
+            await _rentalRepository.SaveChangesAsync();
 
-            return new ResourceIdViewModel { Id = rentalId };
+            return _mapper.Map<ResourceIdViewModel>(rental);
         }
     }
 }
