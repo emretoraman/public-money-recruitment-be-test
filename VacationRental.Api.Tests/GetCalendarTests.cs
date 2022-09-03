@@ -71,10 +71,10 @@ namespace VacationRental.Api.Tests
 
                 Assert.NotNull(getCalendarResult);
                 Assert.NotNull(getCalendarResult!.Dates);
-                getCalendarResult.Dates!.ForEach(d => Assert.NotNull(d.Bookings));
+                Assert.True(getCalendarResult.Dates!.All(d => d.Bookings != null));
                 
                 Assert.Equal(postRentalResult.Id, getCalendarResult!.RentalId);
-                Assert.Equal(5, getCalendarResult.Dates!.Count);
+                Assert.Equal(5, getCalendarResult.Dates.Count);
 
                 Assert.Equal(new DateTime(2000, 01, 01), getCalendarResult.Dates[0].Date);
                 Assert.Empty(getCalendarResult.Dates[0].Bookings);

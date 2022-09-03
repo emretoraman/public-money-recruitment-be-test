@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using VacationRental.Api.Models;
 using Xunit;
 
@@ -19,7 +20,8 @@ namespace VacationRental.Api.Tests
         {
             var request = new RentalBindingModel
             {
-                Units = 25
+                Units = 25,
+                PreparationTimeInDays = 2
             };
 
             ResourceIdViewModel? postResult;
@@ -39,6 +41,7 @@ namespace VacationRental.Api.Tests
 
                 Assert.NotNull(getResult);
                 Assert.Equal(request.Units, getResult!.Units);
+                Assert.Equal(request.PreparationTimeInDays, getResult.PreparationTimeInDays);
             }
         }
     }
