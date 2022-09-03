@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using System;
-using System.Net.Http;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace VacationRental.Api.Tests
@@ -9,21 +6,21 @@ namespace VacationRental.Api.Tests
     [CollectionDefinition("Integration")]
     public sealed class IntegrationFixture : IDisposable, ICollectionFixture<IntegrationFixture>
     {
-        private readonly TestServer _server;
+        private readonly WebApplicationFactory<Program> _webApplicationFactory;
 
         public HttpClient Client { get; }
 
         public IntegrationFixture()
         {
-            _server = new TestServer(new WebHostBuilder().UseStartup<Startup>());
+            _webApplicationFactory = new WebApplicationFactory<Program>();
 
-            Client = _server.CreateClient();
+            Client = _webApplicationFactory.CreateClient();
         }
 
         public void Dispose()
         {
             Client.Dispose();
-            _server.Dispose();
+            _webApplicationFactory.Dispose();
         }
     }
 }
