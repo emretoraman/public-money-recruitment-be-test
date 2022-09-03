@@ -1,4 +1,5 @@
 ﻿using VacationRental.Core.Aggregates.BookingAggregate.Entities;
+using VacationRental.Core.Aggregates.RentalAggregate.Events;
 using VacationRental.SharedKernel.Abstractions;
 using VacationRental.SharedKernel.Interfaces;
 
@@ -29,6 +30,8 @@ namespace VacationRental.Core.Aggregates.RentalAggregate.Entities
         {
             Units = units;
             PreparationTimeInDays = preparationTimeInDays;
+
+            RegisterDomainEvent(new RentalUpdatedEvent(this));
         }
     }
 }

@@ -11,8 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Aggregates\BookingAggregate\Events\" />
-    <Folder Include="Aggregates\RentalAggregate\Events\" />
     <Folder Include="Aggregates\RentalAggregate\Specifications\" />
   </ItemGroup>
 

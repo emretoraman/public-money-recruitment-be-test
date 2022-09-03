@@ -1,4 +1,5 @@
-﻿using VacationRental.Core.Aggregates.RentalAggregate.Entities;
+﻿using VacationRental.Core.Aggregates.BookingAggregate.Events;
+using VacationRental.Core.Aggregates.RentalAggregate.Entities;
 using VacationRental.SharedKernel.Abstractions;
 using VacationRental.SharedKernel.Interfaces;
 
@@ -24,6 +25,8 @@ namespace VacationRental.Core.Aggregates.BookingAggregate.Entities
             RentalId = rentalId;
             Start = start;
             Nights = nights;
+
+            RegisterDomainEvent(new BookingCreatedEvent(this));
         }
     }
 }
