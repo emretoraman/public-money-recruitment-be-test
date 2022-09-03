@@ -36,22 +36,31 @@ namespace VacationRental.Api.Controllers
             if (!_rentals.ContainsKey(model.RentalId))
                 throw new ApplicationException("Rental not found");
 
+            var rental = _rentals[model.RentalId];
+
+            //Get only related bookings
+            var bookings = _bookings.Values
+                .Where(b => b.RentalId == model.RentalId
+                    && b.Start.Date < model.Start.Date.AddDays(model.Nights + rental.PreparationTimeInDays)
+                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > model.Start.Date
+                )
+                .ToList();
+
             for (var i = 0; i < model.Nights; i++)
             {
                 var count = 0;
-                foreach (var booking in _bookings.Values)
+                foreach (var booking in bookings)
                 {
                     if (booking.RentalId == model.RentalId
                         && booking.Start.Date <= model.Start.Date.AddDays(i)
-                        && booking.Start.Date.AddDays(booking.Nights) > model.Start.Date.AddDays(i))
+                        && booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > model.Start.Date.AddDays(i))
                     {
                         count++;
                     }
                 }
-                if (count >= _rentals[model.RentalId].Units)
+                if (count >= rental.Units)
                     throw new ApplicationException("Not available");
             }
-
 
             var key = new ResourceIdViewModel { Id = _bookings.Keys.Count + 1 };
 
