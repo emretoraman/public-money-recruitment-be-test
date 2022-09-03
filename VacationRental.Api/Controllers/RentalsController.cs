@@ -27,6 +27,11 @@ namespace VacationRental.Api.Controllers
         [HttpPost]
         public ResourceIdViewModel Post(RentalBindingModel model)
         {
+            if (model.Units < 0)
+                throw new ApplicationException("Units must be positive");
+            if (model.PreparationTimeInDays < 0)
+                throw new ApplicationException("PreparationTimeInDays must be positive");
+
             var key = new ResourceIdViewModel { Id = _rentals.Keys.Count + 1 };
 
             _rentals.Add(key.Id, new RentalViewModel
