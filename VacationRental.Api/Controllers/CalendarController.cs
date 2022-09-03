@@ -38,8 +38,7 @@ namespace VacationRental.Api.Controllers
             var bookings = _bookings.Values
                 .Where(b => b.RentalId == rentalId
                     && b.Start.Date < start.Date.AddDays(nights + rental.PreparationTimeInDays)
-                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > start.Date
-                )
+                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > start.Date)
                 .ToList();
 
             var bookingUnits = new Dictionary<int, int>();
@@ -59,17 +58,18 @@ namespace VacationRental.Api.Controllers
 
                 foreach (var booking in bookings)
                 {
-                    if (booking.Start.Date > date.Date) continue;
-
-                    if (booking.Start.Date.AddDays(booking.Nights) > date.Date)
+                    if (booking.Start.Date <= date.Date) 
                     {
-                        var unit = GetUnit(bookingUnits, isUnitBlocked, isUnitBlockedTomorrow, booking, rental, date.Date);
-                        date.Bookings.Add(new CalendarBookingViewModel { Id = booking.Id, Unit = unit });
-                    }
-                    else if (booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > date.Date)
-                    {
-                        var unit = GetUnit(bookingUnits, isUnitBlocked, isUnitBlockedTomorrow, booking, rental, date.Date);
-                        date.PreparationTimes.Add(new CalendarPreparationTimeViewModel { Unit = unit });
+                        if (booking.Start.Date.AddDays(booking.Nights) > date.Date)
+                        {
+                            var unit = GetUnit(bookingUnits, isUnitBlocked, isUnitBlockedTomorrow, booking, rental, date.Date);
+                            date.Bookings.Add(new CalendarBookingViewModel { Id = booking.Id, Unit = unit });
+                        }
+                        else if (booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > date.Date)
+                        {
+                            var unit = GetUnit(bookingUnits, isUnitBlocked, isUnitBlockedTomorrow, booking, rental, date.Date);
+                            date.PreparationTimes.Add(new CalendarPreparationTimeViewModel { Unit = unit });
+                        }
                     }
                 }
 
@@ -79,7 +79,7 @@ namespace VacationRental.Api.Controllers
             return result;
         }
 
-        private int GetUnit(Dictionary<int, int> bookingUnits, bool[] isUnitBlocked, bool[] isUnitBlockedTomorrow, BookingViewModel booking, RentalViewModel rental, DateTime date)
+        private static int GetUnit(Dictionary<int, int> bookingUnits, bool[] isUnitBlocked, bool[] isUnitBlockedTomorrow, BookingViewModel booking, RentalViewModel rental, DateTime date)
         {
             var unit = 0;
             if (bookingUnits.ContainsKey(booking.Id)) //Already assigned unit
@@ -88,7 +88,7 @@ namespace VacationRental.Api.Controllers
             }
             else
             {
-                for (int i = 1; i <= rental.Units; i++)
+                for (var i = 1; i <= rental.Units; i++)
                 {
                     if (!isUnitBlocked[i])
                     {

@@ -83,9 +83,7 @@ namespace VacationRental.Api.Controllers
                         }
 
                         if (blockedUnitCounts[date] > model.Units)
-                        {
                             throw new ApplicationException("Failed due to overlappings");
-                        }
                     }
                 }
             }

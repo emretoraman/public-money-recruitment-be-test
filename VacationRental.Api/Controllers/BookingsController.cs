@@ -32,7 +32,7 @@ namespace VacationRental.Api.Controllers
         public ResourceIdViewModel Post(BookingBindingModel model)
         {
             if (model.Nights <= 0)
-                throw new ApplicationException("Nigts must be positive");
+                throw new ApplicationException("Nights must be positive");
             if (!_rentals.ContainsKey(model.RentalId))
                 throw new ApplicationException("Rental not found");
 
@@ -42,18 +42,17 @@ namespace VacationRental.Api.Controllers
             var bookings = _bookings.Values
                 .Where(b => b.RentalId == model.RentalId
                     && b.Start.Date < model.Start.Date.AddDays(model.Nights + rental.PreparationTimeInDays)
-                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > model.Start.Date
-                )
+                    && b.Start.Date.AddDays(b.Nights + rental.PreparationTimeInDays) > model.Start.Date)
                 .ToList();
 
             for (var i = 0; i < model.Nights; i++)
             {
+                var date = model.Start.Date.AddDays(i);
                 var count = 0;
                 foreach (var booking in bookings)
                 {
-                    if (booking.RentalId == model.RentalId
-                        && booking.Start.Date <= model.Start.Date.AddDays(i)
-                        && booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > model.Start.Date.AddDays(i))
+                    if (booking.Start.Date <= date
+                        && booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > date)
                     {
                         count++;
                     }
