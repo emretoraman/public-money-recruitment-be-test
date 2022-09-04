@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using VacationRental.Api.Models;
 using VacationRental.Core.Aggregates.BookingAggregate.Entities;
-using VacationRental.Core.Aggregates.BookingAggregate.Specifications;
 using VacationRental.Core.Aggregates.RentalAggregate.Entities;
+using VacationRental.Core.Aggregates.RentalAggregate.Specifications;
 using VacationRental.SharedKernel.Interfaces;
 
 namespace VacationRental.Api.Controllers
@@ -38,39 +38,21 @@ namespace VacationRental.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ResourceIdViewModel> PostAsync(BookingBindingModel model)
+        public async Task<ResourceIdViewModel> Post(BookingBindingModel model)
         {
             if (model.Nights <= 0)
                 throw new ApplicationException("Nights must be positive");
 
-            var rental = await _rentalRepository.GetByIdAsync(model.RentalId);
+            var specification = new RentalSpecification(model.RentalId, model.Start, model.Nights);
+            var rental = await _rentalRepository.SingleOrDefaultAsync(specification);
             if (rental == null)
                 throw new ApplicationException("Rental not found");
 
-            //Get only related bookings
-            var specification = new BookingsSpecification(model.RentalId, model.Start.Date, model.Nights, rental.PreparationTimeInDays);
-            var bookings = await _bookingRepository.ListAsync(specification); 
+            var booking = new Booking(model.Start.Date, model.Nights);
+            rental!.AddBooking(booking);
+            await _rentalRepository.SaveChangesAsync();
 
-            for (var i = 0; i < model.Nights; i++)
-            {
-                var date = model.Start.Date.AddDays(i);
-                var count = 0;
-                foreach (var booking in bookings)
-                {
-                    if (booking.Start.Date <= date
-                        && booking.Start.Date.AddDays(booking.Nights + rental.PreparationTimeInDays) > date)
-                    {
-                        count++;
-                    }
-                }
-                if (count >= rental.Units)
-                    throw new ApplicationException("Not available");
-            }
-
-            var newBooking = new Booking(model.RentalId, model.Start.Date, model.Nights);
-            await _bookingRepository.AddAsync(newBooking);
-
-            return _mapper.Map<ResourceIdViewModel>(newBooking);
+            return _mapper.Map<ResourceIdViewModel>(booking);
         }
     }
 }

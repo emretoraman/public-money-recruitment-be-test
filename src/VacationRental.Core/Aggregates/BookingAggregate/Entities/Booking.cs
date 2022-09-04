@@ -20,9 +20,8 @@ namespace VacationRental.Core.Aggregates.BookingAggregate.Entities
         public DateTime Start { get; private set; }
         public int Nights { get; private set; }
 
-        public Booking(int rentalId, DateTime start, int nights)
+        public Booking(DateTime start, int nights)
         {
-            RentalId = rentalId;
             Start = start;
             Nights = nights;
 

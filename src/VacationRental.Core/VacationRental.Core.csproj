@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Aggregates\RentalAggregate\Specifications\" />
+    <Folder Include="Aggregates\BookingAggregate\Specifications\" />
   </ItemGroup>
 
 </Project>

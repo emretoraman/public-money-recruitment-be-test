@@ -1,5 +1,7 @@
 ﻿using Microsoft.OpenApi.Models;
 using VacationRental.Api;
+using VacationRental.Api.Interfaces;
+using VacationRental.Api.Services;
 using VacationRental.DependencyInversion;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts => opts.SwaggerDoc("v1", new OpenApiInfo { Title = "Vacation rental information", Version = "v1" }));
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+
+builder.Services.AddScoped<ICalendarService, CalendarService>();
 
 var app = builder.Build();
 
